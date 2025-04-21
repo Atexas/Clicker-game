@@ -1,0 +1,141 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Clicker Tycoon</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; }
+        #gameUI { max-width: 600px; margin: 20px auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; }
+        button { padding: 10px 15px; margin: 5px; font-size: 14px; border-radius: 6px; border: none; background-color: #4CAF50; color: white; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .business, .milestone, .iap, .settings { margin: 10px 0; padding: 10px; background-color: #e0e0e0; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <div id="gameUI">
+        <h1>Business Clicker Tycoon</h1>
+        <div id="status">
+            <p><strong>Cash:</strong> $<span id="cash">0</span></p>
+            <p><strong>Prestige Points:</strong> <span id="prestige">0</span></p>
+        </div>
+        <div id="businessList"></div>
+        <h2>Milestones & Achievements</h2>
+        <div id="milestones"></div>
+        <h2>Offline Earnings</h2>
+        <p>You earned <span id="offlineEarnings">0</span> cash while away!</p>
+        <h2>In-App Purchases</h2>
+        <div class="iap">
+            <button onclick="purchase('cashBoost')">$0.99 - Cash Boost</button>
+            <button onclick="purchase('rebirthBoost')">$0.99 - Rebirth Boost</button>
+            <button onclick="purchase('prestigeBusiness')">$1.99 - Prestige Business</button>
+        </div>
+        <h2>Prestige</h2>
+        <button onclick="prestige()">Prestige and Reset</button>
+        <h2>Settings</h2>
+        <div class="settings">
+            <button onclick="resetGame()">Reset Game</button>
+        </div>
+    </div>
+    <script>
+        let cash = 0;
+        let prestigePoints = 0;
+        let lastOnline = Date.now();
+        let businesses = [];
+        const businessCount = 20;
+        function init() {
+            for (let i = 0; i < businessCount; i++) {
+                businesses.push({
+                    name: `Business ${i + 1}`,
+                    income: 10 * (i + 1),
+                    level: 0,
+                    cost: 50 * (i + 1),
+                });
+            }
+            renderBusinesses();
+            renderMilestones();
+            calculateOfflineEarnings();
+        }
+        function renderBusinesses() {
+            const list = document.getElementById("businessList");
+            list.innerHTML = '';
+            businesses.forEach((b, index) => {
+                let div = document.createElement("div");
+                div.className = "business";
+                div.innerHTML = `
+                    <p><strong>${b.name}</strong> - Level: ${b.level} - Income: $${b.income}/s</p>
+                    <button onclick="upgradeBusiness(${index})">Upgrade ($${b.cost})</button>
+                `;
+                list.appendChild(div);
+            });
+        }
+        function renderMilestones() {
+            const ms = document.getElementById("milestones");
+            ms.innerHTML = '<div class="milestone">Reach $1,000 - Small Tycoon</div>';
+        }
+        function upgradeBusiness(i) {
+            if (cash >= businesses[i].cost) {
+                cash -= businesses[i].cost;
+                businesses[i].level++;
+                businesses[i].income *= 1.25;
+                businesses[i].cost *= 1.5;
+                updateUI();
+                renderBusinesses();
+            }
+        }
+        function updateUI() {
+            document.getElementById("cash").innerText = Math.floor(cash);
+            document.getElementById("prestige").innerText = prestigePoints;
+        }
+        function loopIncome() {
+            let totalIncome = businesses.reduce((sum, b) => sum + b.income * b.level, 0);
+            cash += totalIncome;
+            updateUI();
+        }
+        function prestige() {
+            if (cash >= 1000000) {
+                prestigePoints++;
+                cash = 0;
+                businesses.forEach(b => {
+                    b.level = 0;
+                    b.income = 10 * (businesses.indexOf(b) + 1);
+                    b.cost = 50 * (businesses.indexOf(b) + 1);
+                });
+                renderBusinesses();
+                updateUI();
+            }
+        }
+        function purchase(type) {
+            if (type === 'cashBoost') cash += 10000;
+            if (type === 'rebirthBoost') prestigePoints++;
+            if (type === 'prestigeBusiness') {
+                businesses.push({ name: "Prestige Corp.", income: 10000, level: 1, cost: 100000 });
+                renderBusinesses();
+            }
+            updateUI();
+        }
+        function calculateOfflineEarnings() {
+            const now = Date.now();
+            const diff = (now - lastOnline) / 1000;
+            const income = businesses.reduce((sum, b) => sum + b.income * b.level, 0);
+            const earned = Math.floor(diff * income);
+            cash += earned;
+            document.getElementById("offlineEarnings").innerText = earned;
+        }
+        function resetGame() {
+            if (confirm("Are you sure you want to reset everything?")) {
+                cash = 0;
+                prestigePoints = 0;
+                businesses = [];
+                init();
+                updateUI();
+            }
+        }
+        init();
+        updateUI();
+        setInterval(loopIncome, 1000);
+    </script>
+</body>
+</html>
